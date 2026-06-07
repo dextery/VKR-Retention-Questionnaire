@@ -55,8 +55,11 @@ export default function SurveyPage() {
             `${API_URL}/survey`
           )
 
-        const data =
-          await response.json()
+        if (!response.ok) {
+          throw new Error('Request failed')}
+
+        const data = await response.json()
+        //console.log('RESPONSE:', data)
         setGroup(data.group)
 
         setQuestions(data.questions)

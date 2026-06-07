@@ -7,7 +7,7 @@ dotenv.config()
 const { Pool } = pg
 
 const pool = new Pool({
-  host: process.env.DB_HOST,
+ /* host: process.env.DB_HOST,
 
   port: process.env.DB_PORT,
 
@@ -15,7 +15,21 @@ const pool = new Pool({
 
   user: process.env.DB_USER,
 
-  password: process.env.DB_PASSWORD
+  password: process.env.DB_PASSWORD */
+  connectionString: process.env.DATABASE_URL,
+  ssl: {
+    rejectUnauthorized: false
+  },
+
+  max: 5,
+
+  idleTimeoutMillis: 30000,
+
+  connectionTimeoutMillis: 30000
+})
+
+pool.on('error', (err) => {
+  //console.error('POOL ERROR:', err)
 })
 
 export default pool

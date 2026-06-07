@@ -46,37 +46,29 @@ app.get('/survey', async (req, res) => {
         SELECT
             q.id,
             q.question_type,
-
             m.name AS mechanic,
             m.category,
-
             qv.question_text
-
         FROM questions q
-
         JOIN mechanics m
             ON q.mechanic_id = m.id
-
         JOIN question_variants qv
             ON q.id = qv.question_id
-
         WHERE qv.group_id = $1
-
         ORDER BY
-        m.display_order,
-        q.id
+          m.display_order,
+          q.id
         `,
         [group.id]
       )
 
     res.json({
       group: group.code,
-
-      questions:
-        questionsResult.rows
+      questions: questionsResult.rows
     })
   }
   catch (error) {
+
     console.error(error)
 
     res.status(500).json({
@@ -86,12 +78,21 @@ app.get('/survey', async (req, res) => {
 })
 
 app.post('/submit', async (req, res) => {
+
   try {
+
     const {
       group,
-      answers, 
+      answers,
       sessionId
     } = req.body
+
+    if (!answers || Object.keys(answers).length === 0) {
+      //throw new Error('No answers provided')
+      return res.status(400).json({
+        success: false,
+        error: 'No answers provided'})
+    }
 
     const groupResult =
       await pool.query(
@@ -102,57 +103,124 @@ app.post('/submit', async (req, res) => {
         `,
         [group]
       )
-
+    
+    if (!groupResult.rows.length) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid group'
+      })}
+    
     const groupId =
       groupResult.rows[0].id
 
-    const sessionResult = await pool.query(
-        `
-        INSERT INTO survey_sessions (
-        group_id,
-        session_uuid
+
+    //const client = await pool.connect()
+
+    try {
+
+      //await pool.query('BEGIN')
+
+      const sessionResult =
+        await pool.query(
+          `
+          INSERT INTO survey_sessions (
+            group_id,
+            session_uuid
+          )
+          VALUES ($1, $2)
+          RETURNING *
+          `,
+          [groupId, sessionId]
         )
-        VALUES ($1, $2)
-        RETURNING *
-        `,
-        [groupId, sessionId]
-    )
+        //console.log('SESSION ID:',sessionResult.rows[0].id)
 
-    const session =
-      sessionResult.rows[0]
+      const session =
+        sessionResult.rows[0]
 
-    for (
-      const questionId in answers
-    ) {
+      //console.log('TOTAL ANSWERS:',Object.keys(answers).length)
+
+      const values = []
+
+      const placeholders = []
+
+      let paramIndex = 1
+
+      
+      
+      for (const questionId in answers) {
+
+        placeholders.push(
+          `($${paramIndex}, $${paramIndex + 1}, $${paramIndex + 2})`
+        )
+
+        values.push(
+          session.id,
+          Number(questionId),
+          Number(answers[questionId])
+        )
+
+        paramIndex += 3
+      }
+
+      if (placeholders.length === 0) {
+          throw new Error('No valid answers to insert')}
+
+
+      //console.log('PLACEHOLDERS:',placeholders.length)
+
+      //console.log('VALUES:',values.length)
+
       await pool.query(
         `
         INSERT INTO survey_answers (
-            session_id,
-            question_id,
-            answer
+          session_id,
+          question_id,
+          answer
         )
-        VALUES ($1, $2, $3)
+        VALUES
+        ${placeholders.join(',')}
         `,
-        [
-          session.id,
-          questionId,
-          answers[questionId]
-        ]
+        values
       )
+
+      //console.log('ALL ANSWERS INSERTED')
+
+      //await pool.query('COMMIT')
+
+      res.json({
+        success: true
+      })
+
+    }
+    //catch (error) {
+
+      //await pool.query('ROLLBACK')
+
+      //throw error
+
+    //}
+    finally {
+
+      //pool.release()
+
     }
 
-    res.json({
-      success: true
-    })
   }
   catch (error) {
-    console.error(error)
+
+    console.error(
+      'SUBMIT ERROR:',
+      error
+    )
 
     res.status(500).json({
       success: false
     })
+
   }
+
 })
+
 
 app.get('/analytics', async (req, res) => {
   try {
@@ -202,11 +270,38 @@ app.get('/analytics', async (req, res) => {
   }
 })
 
+app.get('/dbtest', async (req, res) => {
+
+  try {
+
+    for (let i = 1; i <= 20; i++) {
+
+      await pool.query(
+        'SELECT NOW()'
+      )
+
+      //console.log('QUERY',i)
+    }
+
+    res.json({
+      success: true
+    })
+
+  }
+  catch (error) {
+
+    console.error(error)
+
+    res.status(500).json({
+      success: false,
+      error: error.message
+    })
+  }
+})
+
 const PORT =
   process.env.PORT || 3001
 
 app.listen(PORT, () => {
-  console.log(
-    `Server running on port ${PORT}`
-  )
+ // console.log(`Server running on port ${PORT}`)
 })
