@@ -118,9 +118,7 @@ export default function SurveyPage() {
     document.body.className =
       group.toLowerCase()
 
-    return () => {
-      document.body.className = ''
-    }
+    return () => {document.body.className = ''}
 
   }, [group])
 
@@ -344,9 +342,8 @@ export default function SurveyPage() {
   
   return (
     <div className="container">
-
       <h1>
-        Опрос retention-механик
+        Опрос механик удержания
       </h1>
 
      {/* <h2>

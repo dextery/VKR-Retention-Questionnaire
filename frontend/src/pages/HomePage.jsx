@@ -1,15 +1,20 @@
 import { Link } from 'react-router-dom'
+import { useLayoutEffect } from 'react'
 
 export default function HomePage() {
+  useLayoutEffect(() => {
+  document.body.className = 'default'
+}, [])
+  
   return (
     <div className="container">
       <h1>
-        Опрос retention-механик
+        Опрос механик удержания
       </h1>
 
       <p>
         Данное исследование посвящено
-        восприятию retention-механик
+        восприятию механик удеражния аудитории
         в современных видеоиграх.
       </p>
 
@@ -29,7 +34,7 @@ export default function HomePage() {
 
       <div className="consent-box">
         <p>
-          Нажав на кнопку ниже вы начнёте исследование. Заранее спасибо за участие!
+          Нажав на кнопку ниже вы начнёте опрос. Заранее спасибо за участие!
         </p>
       </div>
 
